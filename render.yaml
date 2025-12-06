@@ -3,7 +3,7 @@ services:
     name: ccbb-bitacola-backend
     env: node
     plan: free
-    buildCommand: npm install --production
+    buildCommand: npm install && npm run build
     startCommand: node server.js
     envVars:
       - key: NODE_ENV
