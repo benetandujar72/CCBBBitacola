@@ -1,0 +1,5 @@
+{
+  "name": "Avaluació CCBB - SIMULACRE",
+  "description": "Una aplicació intuïtiva per a docents per avaluar per competències, amb importació intel·ligent via Gemini i interfície estil Material Design.",
+  "requestFramePermissions": []
+}
