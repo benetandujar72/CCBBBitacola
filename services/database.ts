@@ -1,52 +1,48 @@
 
 /**
- * ARXIU DE REFERÈNCIA PER A BACKEND (Node.js)
- * -------------------------------------------
- * 
- * IMPORTANT: Aquest codi està comentat perquè la llibreria 'pg' NO funciona al navegador
- * i farà que l'aplicació deixi de carregar (Error: "Failed to load module script").
- * 
- * Per connectar amb Neon PostgreSQL, has de moure aquest codi a un servidor API (Node.js/Express)
- * o una Serverless Function (Vercel/Netlify).
- * 
- * QUAN TINGUIS EL SERVIDOR, DESCOMENTA EL CODI DE SOTA:
+ * SERVEI DE BASE DE DADES (CLIENT SIDE)
+ * -------------------------------------
+ * Aquest servei connecta amb el Backend (Serverless Function) situat a /api/query.
+ * No connecta directament a Postgres, sinó que fa una petició HTTP segura.
  */
 
-/*
-import { Pool } from 'pg';
+export interface QueryResult {
+  rows: any[];
+  rowCount: number;
+  command?: string;
+  duration?: number;
+}
 
-const CONNECTION_STRING = "postgresql://neondb_owner:npg_WK0ZNzjk1THn@ep-bitter-salad-agg41t0m-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
-
-export const db = new Pool({
-  connectionString: CONNECTION_STRING,
-  ssl: {
-    rejectUnauthorized: false, // Necessari per a Neon
-  },
-});
-
-export const query = async (text: string, params?: any[]) => {
-  const start = Date.now();
+export const query = async (text: string, params?: any[]): Promise<QueryResult> => {
   try {
-    const res = await db.query(text, params);
-    const duration = Date.now() - start;
-    console.log('Query executada', { text, duration, rows: res.rowCount });
-    return res;
+    // En producció (Vercel), '/api/query' resol automàticament a la funció serverless.
+    const response = await fetch('/api/query', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text, params }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(errorData.error || `Error del servidor: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
   } catch (error) {
-    console.error('Error en la query', { text, error });
+    console.error('Error executant query remota:', error);
     throw error;
   }
 };
-*/
 
-// --- MOCK PER EVITAR ERRORS AL NAVEGADOR ---
-export const db = {
-  query: async (text: string, params?: any[]) => { 
-    console.warn("Connexió DB desactivada al client."); 
-    return { rows: [], rowCount: 0 }; 
+// Funció de utilitat per provar la connexió
+export const testConnection = async () => {
+  try {
+    const res = await query('SELECT NOW() as now');
+    return { success: true, timestamp: res.rows[0].now };
+  } catch (e: any) {
+    return { success: false, error: e.message };
   }
-};
-
-export const query = async (text: string, params?: any[]) => { 
-  console.warn("Connexió DB desactivada al client."); 
-  return { rows: [], rowCount: 0 }; 
 };

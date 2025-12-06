@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { User, AuditLog, Group, Subject, Student, Competency, Evaluation, LevelLabels, LevelValues, SheetConfig, PreviewData } from '../types';
+import { testConnection } from '../services/database';
 
 interface AdminDashboardProps {
   onClose: () => void;
@@ -29,10 +30,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   sheetConfigs = [], onSaveSheetConfigs, onSyncSheets,
   previewData, onConfirmSync, onCancelPreview, onUpdateAnswerKeys
 }) => {
-  const [activeTab, setActiveTab] = useState<'data' | 'users' | 'logs'>('data');
+  const [activeTab, setActiveTab] = useState<'data' | 'users' | 'logs' | 'database'>('data');
   const [filterEmail, setFilterEmail] = useState('');
   const [csvAnswerKey, setCsvAnswerKey] = useState('');
   const [answerKeyStatus, setAnswerKeyStatus] = useState<string | null>(null);
+  const [dbStatus, setDbStatus] = useState<{ status: 'idle' | 'loading' | 'success' | 'error', msg: string }>({ status: 'idle', msg: '' });
   
   // Sheet Config State (local)
   const [configs, setConfigs] = useState<SheetConfig[]>(
@@ -57,6 +59,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setTimeout(() => setAnswerKeyStatus(null), 3000);
     } else {
       setAnswerKeyStatus("Error al processar el CSV. Revisa el format.");
+    }
+  };
+
+  const handleTestDb = async () => {
+    setDbStatus({ status: 'loading', msg: 'Connectant amb Neon PostgreSQL...' });
+    try {
+      const res = await testConnection();
+      if (res.success) {
+        setDbStatus({ status: 'success', msg: `Connexió exitosa! Server Time: ${res.timestamp}` });
+      } else {
+        setDbStatus({ status: 'error', msg: `Error de connexió: ${res.error}` });
+      }
+    } catch (e: any) {
+      setDbStatus({ status: 'error', msg: `Error crític: ${e.message}` });
     }
   };
 
@@ -178,19 +194,28 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* Tabs */}
         <div className="bg-gray-100 p-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex space-x-2 bg-white p-1 rounded-lg shadow-sm border border-gray-200 w-full sm:w-auto">
+          <div className="flex space-x-2 bg-white p-1 rounded-lg shadow-sm border border-gray-200 w-full sm:w-auto overflow-x-auto">
              <button
               onClick={() => setActiveTab('data')}
-              className={`flex-1 sm:flex-none px-6 py-2 rounded-md text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+              className={`flex-1 sm:flex-none px-4 lg:px-6 py-2 rounded-md text-sm font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap ${
                 activeTab === 'data' ? 'bg-gray-800 text-white shadow' : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>
-              Dades Acadèmiques
+              Dades
+            </button>
+            <button
+              onClick={() => setActiveTab('database')}
+              className={`flex-1 sm:flex-none px-4 lg:px-6 py-2 rounded-md text-sm font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap ${
+                activeTab === 'database' ? 'bg-gray-800 text-white shadow' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" /></svg>
+              Base de Dades
             </button>
             <button
               onClick={() => setActiveTab('users')}
-              className={`flex-1 sm:flex-none px-6 py-2 rounded-md text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+              className={`flex-1 sm:flex-none px-4 lg:px-6 py-2 rounded-md text-sm font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap ${
                 activeTab === 'users' ? 'bg-gray-800 text-white shadow' : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
@@ -199,12 +224,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('logs')}
-              className={`flex-1 sm:flex-none px-6 py-2 rounded-md text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+              className={`flex-1 sm:flex-none px-4 lg:px-6 py-2 rounded-md text-sm font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap ${
                 activeTab === 'logs' ? 'bg-gray-800 text-white shadow' : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-              Logs del Sistema
+              Logs
             </button>
           </div>
           
@@ -224,6 +249,54 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {/* Content */}
         <div className="flex-1 overflow-auto bg-gray-50 p-6">
           
+          {/* PESTANYA BASE DE DADES (NOVA) */}
+          {activeTab === 'database' && (
+             <div className="max-w-3xl mx-auto space-y-6">
+               <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+                  <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-50 mb-4">
+                       <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-800">Estat de la Base de Dades (Neon PostgreSQL)</h3>
+                    <p className="text-gray-500 mt-2">
+                       Aquesta eina verifica que el backend (<code className="bg-gray-100 px-1 rounded text-xs">/api/query</code>) es pot comunicar correctament amb la base de dades.
+                    </p>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 mb-6">
+                     <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-gray-600">Estat Connexió:</span>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                          dbStatus.status === 'success' ? 'bg-green-100 text-green-700' :
+                          dbStatus.status === 'error' ? 'bg-red-100 text-red-700' :
+                          dbStatus.status === 'loading' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-200 text-gray-500'
+                        }`}>
+                           {dbStatus.status === 'idle' ? 'NO INICIAT' : dbStatus.status}
+                        </span>
+                     </div>
+                     {dbStatus.msg && (
+                       <div className={`mt-4 p-3 rounded-lg text-sm font-mono border ${
+                         dbStatus.status === 'success' ? 'bg-green-50 text-green-800 border-green-200' : 
+                         dbStatus.status === 'error' ? 'bg-red-50 text-red-800 border-red-200' : 'bg-yellow-50 text-yellow-800 border-yellow-200'
+                       }`}>
+                         {dbStatus.msg}
+                       </div>
+                     )}
+                  </div>
+
+                  <button 
+                    onClick={handleTestDb}
+                    disabled={dbStatus.status === 'loading'}
+                    className={`w-full py-3 rounded-xl font-bold text-white shadow-lg transition-all transform active:scale-95 ${
+                      dbStatus.status === 'loading' ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'
+                    }`}
+                  >
+                    {dbStatus.status === 'loading' ? 'Connectant...' : 'Provar Connexió Live'}
+                  </button>
+               </div>
+             </div>
+          )}
+
           {/* PESTANYA DADES ACADÈMIQUES */}
           {activeTab === 'data' && (
             <div className="space-y-6">
@@ -338,7 +411,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           )}
 
-          {/* PESTANYA LOGS (Antiga) */}
+          {/* PESTANYA LOGS */}
           {activeTab === 'logs' && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
