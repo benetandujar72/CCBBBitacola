@@ -1,7 +1,7 @@
 import React from 'react';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 import { Student, Evaluation, Competency, Group, Subject } from '../../types';
 
@@ -72,8 +72,8 @@ export const exportPdf = (
     const doc = new jsPDF('landscape');
     doc.setFontSize(14);
     doc.text('Informe de resultados – CCBB', 14, 20);
-    // @ts-ignore – autoTable está añadido a jsPDF vía import
-    (doc as any).autoTable({
+
+    autoTable(doc, {
         head: [header],
         body: rows,
         startY: 30,
@@ -81,6 +81,7 @@ export const exportPdf = (
         headStyles: { fillColor: [41, 128, 185] },
         styles: { fontSize: 8, cellPadding: 2 }
     });
+
     doc.save('informe_ccbb.pdf');
 };
 

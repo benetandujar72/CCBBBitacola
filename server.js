@@ -239,6 +239,26 @@ app.put('/api/users/:email', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// --- EXPORT TO GOOGLE SHEETS ---
+app.post('/api/export-sheet', async (req, res) => {
+    const { header, rows } = req.body;
+
+    try {
+        // Si no tienes googleapis configurado, devuelve un CSV descargable
+        const csvContent = [header, ...rows]
+            .map(row => row.map(cell => `"${cell}"`).join(','))
+            .join('\n');
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=informe_ccbb.csv');
+        res.send(csvContent);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error creando el archivo');
+    }
+});
+
+
 // Servir frontend en producción
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, 'dist')));
