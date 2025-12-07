@@ -28,5 +28,7 @@
     "uuid": "^9.0.1",
     "vite": "^5.0.8"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/node": "^24.10.1"
+  }
 }
