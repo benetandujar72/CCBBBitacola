@@ -3,7 +3,7 @@ import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-import { Student, Evaluation, Competency, Group, Subject } from '../types';
+import { Student, Evaluation, Competency, Group, Subject } from '../../types';
 
 /**
  * Construye la tabla de datos a exportar.
@@ -16,13 +16,22 @@ function buildTableData(
     competencies: Competency[],
     evaluations: Evaluation[]
 ) {
-    // Seleccionamos la materia que queremos exportar (por ahora la primera)
+    // Seleccionamos la primera materia disponible
     const subject = subjects[0];
-    const subjectStudents = students.filter((s) => s.subjectId === subject.id);
+    if (!subject) return { header: ['Sin datos'], rows: [] };
+
+    // Filtramos estudiantes del primer grupo
+    const firstGroup = groups[0];
+    if (!firstGroup) return { header: ['Sin grupos'], rows: [] };
+
+    const subjectStudents = students.filter((s) => s.groupId === firstGroup.id);
 
     const header = [
         `Resultats simulacre CCBB ${subject.name.toUpperCase()}`,
-        ...subjectStudents.map((st) => `${st.groupName} - ${st.name}`)
+        ...subjectStudents.map((st) => {
+            const group = groups.find(g => g.id === st.groupId);
+            return `${group?.name || ''} - ${st.name}`;
+        })
     ];
 
     const rows: (string | number)[][] = [];
@@ -135,7 +144,7 @@ export const ExportReport: React.FC<Props> = ({
             }
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
         >
-            Exportar a Google Sheets
+            Exportar a Google Sheets
         </button>
     </div>
 );
