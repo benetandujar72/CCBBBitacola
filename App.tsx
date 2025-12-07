@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { ExportReport } from './components/ExportReport';
 import { v4 as uuidv4 } from 'uuid';
 import ImportModal from './components/ImportModal';
 import StudentCard from './components/StudentCard';
