@@ -11,9 +11,14 @@ export default function handler(req, res) {
             .map(row => row.map(cell => `"${cell}"`).join(','))
             .join('\n');
 
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', 'attachment; filename=informe_ccbb.csv');
-        res.status(200).send(csvContent);
+        // Crear un data URL para descarga
+        const dataUrl = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+
+        // Devolver JSON con la URL como espera el frontend
+        res.status(200).json({
+            sheetUrl: dataUrl,
+            message: 'CSV generado correctamente'
+        });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Error creando el archivo' });

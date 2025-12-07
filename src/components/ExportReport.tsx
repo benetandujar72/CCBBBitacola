@@ -101,18 +101,33 @@ export const exportSheets = async (
         evaluations
     );
 
-    const response = await fetch('/api/export-sheet', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ header, rows })
-    });
+    try {
+        const response = await fetch('/api/export-sheet', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ header, rows })
+        });
 
-    if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`Export to Sheets failed: ${err}`);
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(`Export to Sheets failed: ${err}`);
+        }
+
+        const { sheetUrl } = await response.json();
+
+        // Descargar el archivo CSV directamente
+        const link = document.createElement('a');
+        link.href = sheetUrl;
+        link.download = 'informe_ccbb.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        alert('Archivo CSV descargado correctamente');
+    } catch (error) {
+        console.error('Error exportando a CSV:', error);
+        alert('Error al exportar el archivo. Por favor, inténtalo de nuevo.');
     }
-    const { sheetUrl } = await response.json();
-    window.open(sheetUrl, '_blank');
 };
 
 interface Props {
